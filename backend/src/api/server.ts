@@ -1,9 +1,13 @@
 import express from "express";
 import { router } from "./routes.js";
+import { connectDatabase } from "../core/data/ConnectionDB.js";
 import dotenv from 'dotenv';
 import cors from 'cors';
 
 dotenv.config();
+
+// conexão com o postgres
+connectDatabase();
 
 const app = express();
 

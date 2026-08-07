@@ -1,0 +1,317 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  STUDENT
+  PROFESSOR
+}
+
+enum ClipboardType {
+  FLASHCARD
+  DOCUMENT
+  CLINICAL_CASE
+}
+
+enum ClipboardStatus {
+  STUDYING
+  REVIEW
+  COMPLETED
+}
+
+model User {
+  id String @id @default(uuid())
+
+  name     String
+  email    String @unique
+  password String
+
+  role UserRole
+
+  avatar String?
+
+  cabinets   Cabinet[]
+  clipboards Clipboard[]
+  categories Category[]
+  tags       Tag[]
+
+  studyHistories StudyHistory[]
+  reviews        Review[]
+  favorites      Favorite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cabinet {
+  id String @id @default(uuid())
+
+  userId String
+
+  name        String
+  description String?
+
+  icon  String?
+  color String?
+
+  position Int @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  drawers Drawer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Drawer {
+  id String @id @default(uuid())
+
+  cabinetId String
+
+  name String
+
+  icon  String?
+  color String?
+
+  position Int @default(0)
+
+  cabinet Cabinet @relation(fields: [cabinetId], references: [id], onDelete: Cascade)
+
+  folders Folder[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cabinetId])
+}
+
+model Folder {
+  id String @id @default(uuid())
+
+  drawerId String
+
+  name        String
+  description String?
+
+  coverImage String?
+
+  icon  String?
+  color String?
+
+  position Int @default(0)
+
+  drawer Drawer @relation(fields: [drawerId], references: [id], onDelete: Cascade)
+
+  clipboards Clipboard[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([drawerId])
+}
+
+model Clipboard {
+  id String @id @default(uuid())
+
+  folderId String
+  authorId String
+
+  title    String
+  subtitle String?
+
+  type ClipboardType
+
+  categoryId String?
+
+  difficulty Int @default(1)
+
+  status ClipboardStatus @default(STUDYING)
+
+  icon  String?
+  color String?
+
+  estimatedTime Int?
+
+  favorite Boolean @default(false)
+
+  content Json
+
+  folder Folder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  author User @relation(fields: [authorId], references: [id])
+
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  tags ClipboardTag[]
+
+  attachments Attachment[]
+
+  histories StudyHistory[]
+
+  reviews Review[]
+
+  favorites Favorite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([folderId])
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([type])
+  @@index([status])
+}
+
+model Category {
+  id String @id @default(uuid())
+
+  userId String
+
+  name String
+
+  color String?
+  icon  String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  clipboards Clipboard[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Tag {
+  id String @id @default(uuid())
+
+  userId String
+
+  name String
+
+  color String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  clipboards ClipboardTag[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model ClipboardTag {
+  clipboardId String
+  tagId       String
+
+  clipboard Clipboard @relation(fields: [clipboardId], references: [id], onDelete: Cascade)
+
+  tag Tag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([clipboardId, tagId])
+  @@index([tagId])
+}
+
+model Attachment {
+  id String @id @default(uuid())
+
+  clipboardId String
+
+  name String
+
+  url String
+
+  mimeType String
+
+  extension String?
+
+  size Int?
+
+  clipboard Clipboard @relation(fields: [clipboardId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([clipboardId])
+}
+
+model StudyHistory {
+  id String @id @default(uuid())
+
+  userId String
+
+  clipboardId String
+
+  startedAt DateTime
+
+  finishedAt DateTime?
+
+  duration Int?
+
+  score Float?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  clipboard Clipboard @relation(fields: [clipboardId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([clipboardId])
+  @@index([startedAt])
+}
+
+model Review {
+  id String @id @default(uuid())
+
+  clipboardId String
+
+  userId String
+
+  lastReview DateTime?
+
+  nextReview DateTime?
+
+  easeFactor Float @default(2.5)
+
+  interval Int @default(0)
+
+  repetitions Int @default(0)
+
+  clipboard Clipboard @relation(fields: [clipboardId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, clipboardId])
+  @@index([nextReview])
+}
+
+model Favorite {
+  id String @id @default(uuid())
+
+  userId String
+
+  clipboardId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  clipboard Clipboard @relation(fields: [clipboardId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, clipboardId])
+  @@index([clipboardId])
+}

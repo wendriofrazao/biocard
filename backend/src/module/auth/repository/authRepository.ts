@@ -1,5 +1,6 @@
 import { prisma } from "../../../core/data/ConnectionDB.js";
 import type { User, Prisma } from "@prisma/client";
+import type { CreateUserDTO } from "../dtos/CreateUserDTO.js";
 
 export class AuthRepository {
 
@@ -21,10 +22,10 @@ export class AuthRepository {
         }
     }
 
-    async createUser(data: Prisma.UserCreateInput) {
+    async createUser(data: CreateUserDTO): Promise<User> {
         try {
-            const userCreate = await prisma.user.create({ data });
-            return userCreate;
+            return await prisma.user.create({ data });
+
         } catch (error) {
             throw new Error(`Error ao criar usuário (repositório): ${error}`);
         }

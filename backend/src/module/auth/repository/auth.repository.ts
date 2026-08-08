@@ -1,5 +1,5 @@
 import { prisma } from "../../../core/data/ConnectionDB.js";
-import type { User, Prisma } from "@prisma/client";
+import type { User} from "@prisma/client";
 import type { CreateUserDTO } from "../dtos/CreateUserDTO.js";
 
 export class AuthRepository {
